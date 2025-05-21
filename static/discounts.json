@@ -1,0 +1,30 @@
+{
+  "Spring": {
+    "Airpods": {"original": 179.99, "discounted": 159.99},
+    "Blender": {"original": 59.99, "discounted": 49.99},
+    "Camera": {"original": 349.99, "discounted": 299.99},
+    "Kettle": {"original": 39.99, "discounted": 29.99},
+    "Coffee maker": {"original": 59.99, "discounted": 49.99}
+  },
+  "Summer": {
+    "Smartwatch": {"original": 229.99, "discounted": 209.99},
+    "Desk": {"original": 179.99, "discounted": 159.99},
+    "TV": {"original": 499.99, "discounted": 469.99},
+    "Speaker": {"original": 99.99, "discounted": 94.99},
+    "Laptop": {"original": 999.99, "discounted": 949.99}
+  },
+  "Fall": {
+    "Vacuum cleaner": {"original": 119.99, "discounted": 109.99},
+    "Treadmill": {"original": 799.99, "discounted": 699.99},
+    "Camera": {"original": 349.99, "discounted": 299.99},
+    "Kettle": {"original": 39.99, "discounted": 29.99},
+    "Coffee maker": {"original": 59.99, "discounted": 49.99}
+  },
+  "Winter": {
+    "Airpods": {"original": 179.99, "discounted": 149.99},
+    "Smartwatch": {"original": 229.99, "discounted": 179.99},
+    "Blender": {"original": 59.99, "discounted": 44.99},
+    "Treadmill": {"original": 799.99, "discounted": 649.99},
+    "Laptop": {"original": 999.99, "discounted": 849.99}
+  }
+}
