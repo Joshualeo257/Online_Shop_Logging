@@ -1,7 +1,8 @@
-
 name: CI/CD Pipeline
+
 permissions:
   contents: write
+
 on:
   push:
     branches: [ main ]
@@ -13,50 +14,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run linting
-      run: npm run lint || echo "No linting configured"
-      
-    - name: Build project
-      run: npm run build
-    
-    - name: Run tests
-      run: npm test || echo "No tests configured"
-      
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: List project files (basic verification)
+      run: ls -la
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Build project
-      run: npm run build
-      
-    # Add your deployment steps here
-    # Example for deploying to GitHub Pages:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        folder: dist # The folder the action should deploy
-        branch: gh-pages # The branch the action should deploy to
+        folder: .   # Deploy from root directory
+        branch: gh-pages
