@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Product Discounts by Season</title>
+<style>
+  body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background:url('/static/images/main_bg.jpg') no-repeat center/cover fixed;;
+    color: #333;
+    position: relative;
+  }
+  .title-bar {
+    background-color: black;
+    color: white;
+    padding: 15px 0;
+    font-size: 2.5em;
+    font-weight: bold;
+    position: relative;
+    text-align: center;
+  }
+  #season-select {
+    position: absolute;
+    top: 10px;
+    left: 30px;
+    font-size: 1.0em;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background-color: #2c3e50;
+    color: white;
+    z-index: 25;
+  }
+  #season-select:hover {
+    background-color: #1a2736;
+  }
+  .products {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 30px;
+    margin: 30px auto;
+    width: 90%;
+    max-width: 1200px;
+  }
+  .product {
+    text-align: center;
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+  }
+  .product img {
+    width: 180px;
+    height: 180px;
+    border-radius: 12px;
+  }
+  .product-name {
+    margin-top: 15px;
+    font-size: 1.3em;
+    color: #555;
+  }
+  .price {
+    margin-top: 5px;
+    font-size: 1.1em;
+    color: #333;
+  }
+  .original-price {
+    text-decoration: line-through;
+    color: #888;
+    margin-right: 8px;
+  }
+  .discounted-price {
+    color: #e74c3c;
+    font-weight: bold;
+  }
+  #cart-btn {
+    position: absolute;
+    top: 5px;
+    right: 30px;
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    font-size: 1.0em;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 20;
+  }
+  #cart-btn:hover {
+    background-color: #1a2736;
+  }
+  #cart-dropdown {
+    display: none;
+    position: absolute;
+    right: 30px;
+    top: 55px;
+    background: white;
+    border: 1px solid #ccc;
+    width: 280px;
+    max-height: 360px;
+    overflow-y: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    border-radius: 6px;
+    z-index: 15;
+    padding: 10px 15px;
+    color: black;
+    text-align: left;
+  }
+  #cart-dropdown h3 {
+    margin-top: 0;
+    font-size: 1.3em;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+  }
+  .cart-item {
+    margin-bottom: 12px;
+    font-size: 1.1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cart-item span {
+    flex-grow: 1;
+  }
+  .remove-btn {
+    background-color: #e74c3c;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 3px 8px;
+    font-size: 0.9em;
+  }
+</style>
+</head>
+<body>
+
+<div class="title-bar">
+  Product Store
+  <select id="season-select" title="Select season for discounts">
+    <option value="Spring">Spring</option>
+    <option value="Summer">Summer</option>
+    <option value="Fall">Fall</option>
+    <option value="Winter">Winter</option>
+  </select>
+  <button id="cart-btn">Your Cart (0)</button>
+</div>
+
+<div class="products" id="product-list">
+  <!-- Products will be rendered here -->
+</div>
+
+<div id="cart-dropdown">
+  <h3>Your Cart</h3>
+  <div id="cart-items"></div>
+  <hr />
+  <div><strong>Total: $<span id="cart-total">0.00</span></strong></div>
+</div>
+
+<script>
+// Products data with original prices (static)
+const products = [
+  { name: "Airpods", img: "/static/images/product1.jpg", originalPrice: 179.99 },
+  { name: "Smartwatch", img: "/static/images/product2.jpg", originalPrice: 229.99 },
+  { name: "Blender", img: "/static/images/product3.png", originalPrice: 59.99 },
+  { name: "Desk", img: "/static/images/product4.jpg", originalPrice: 179.99 },
+  { name: "Vacuum cleaner", img: "/static/images/product5.jpg", originalPrice: 119.99 },
+  { name: "Camera", img: "/static/images/product6.jpg", originalPrice: 349.99 },
+  { name: "TV", img: "/static/images/product7.jpg", originalPrice: 499.99 },
+  { name: "Treadmill", img: "/static/images/product8.jpg", originalPrice: 799.99 },
+  { name: "Speaker", img: "/static/images/product9.jpg", originalPrice: 99.99 },
+  { name: "Kettle", img: "/static/images/product10.jpg", originalPrice: 39.99 },
+  { name: "Laptop", img: "/static/images/product11.jpg", originalPrice: 999.99 },
+  { name: "Coffee maker", img: "/static/images/product12.jpg", originalPrice: 59.99 }
+];
+
+// Global cart
+let cart = [];
+
+// Function to render products with prices (apply discounts if any)
+function renderProducts(discounts) {
+  const productList = document.getElementById('product-list');
+  productList.innerHTML = '';
+
+  products.forEach(product => {
+    let originalPrice = product.originalPrice.toFixed(2);
+    let discountedPrice = null;
+
+    if (discounts && discounts[product.name]) {
+      discountedPrice = discounts[product.name].discounted.toFixed(2);
+      originalPrice = discounts[product.name].original.toFixed(2); // use from discounts JSON for accuracy
+    }
+
+    const productDiv = document.createElement('div');
+    productDiv.classList.add('product');
+
+    productDiv.innerHTML = `
+      <img src="${product.img}" alt="${product.name}" />
+      <div class="product-name">${product.name}</div>
+      <div class="price">
+        ${
+          discountedPrice
+            ? `<span class="original-price">$${originalPrice}</span><span class="discounted-price">$${discountedPrice}</span>`
+            : `$${originalPrice}`
+        }
+      </div>
+      <button class="add-to-cart-btn">Add to Cart</button>
+    `;
+
+    // Add to cart button event
+    productDiv.querySelector('.add-to-cart-btn').addEventListener('click', () => {
+      const priceToAdd = discountedPrice ? parseFloat(discountedPrice) : parseFloat(originalPrice);
+      addToCart(product.name, priceToAdd);
+    });
+
+    productList.appendChild(productDiv);
+  });
+}
+
+// Add product to cart
+function addToCart(name, price) {
+  cart.push({ name, price });
+  updateCartUI();
+}
+
+// Remove item from cart by index
+function removeFromCart(index) {
+  cart.splice(index, 1);
+  updateCartUI();
+}
+
+// Update cart dropdown UI and count
+function updateCartUI() {
+  const cartBtn = document.getElementById('cart-btn');
+  const cartDropdown = document.getElementById('cart-dropdown');
+  const cartItemsDiv = document.getElementById('cart-items');
+  const cartTotalSpan = document.getElementById('cart-total');
+
+  cartBtn.textContent = `Your Cart (${cart.length})`;
+
+  cartItemsDiv.innerHTML = '';
+  let total = 0;
+
+  cart.forEach((item, index) => {
+    total += item.price;
+    const itemDiv = document.createElement('div');
+    itemDiv.classList.add('cart-item');
+    itemDiv.innerHTML = `
+      <span>${item.name} - $${item.price.toFixed(2)}</span>
+      <button class="remove-btn" data-index="${index}">Remove</button>
+    `;
+    cartItemsDiv.appendChild(itemDiv);
+  });
+
+  cartTotalSpan.textContent = total.toFixed(2);
+
+  // Add remove event listeners
+  cartItemsDiv.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = parseInt(btn.getAttribute('data-index'));
+      removeFromCart(index);
+    });
+  });
+}
+
+// Toggle cart dropdown visibility
+document.getElementById('cart-btn').addEventListener('click', () => {
+  const cartDropdown = document.getElementById('cart-dropdown');
+  if (cartDropdown.style.display === 'block') {
+    cartDropdown.style.display = 'none';
+  } else {
+    cartDropdown.style.display = 'block';
+  }
+});
+
+// Load discounts for selected season and update product prices
+async function updatePricesForSeason(season) {
+  try {
+    const response = await fetch('/static/discounts.json');
+    const allDiscounts = await response.json();
+    const discounts = allDiscounts[season] || {};
+    renderProducts(discounts);
+  } catch (error) {
+    console.error('Failed to load discounts:', error);
+    renderProducts(null); // render without discounts if failed
+  }
+}
+
+// Season dropdown change event
+document.getElementById('season-select').addEventListener('change', (e) => {
+  updatePricesForSeason(e.target.value);
+  cart = []; // Clear cart on season change to avoid confusion with old prices
+  updateCartUI();
+});
+
+// Initial load for default season
+updatePricesForSeason(document.getElementById('season-select').value);
+</script>
+
+</body>
+</html>
