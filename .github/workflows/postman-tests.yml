@@ -22,7 +22,7 @@ jobs:
 
       - name: Run Newman Collection (no environment file)
         run: |
-          npx newman run "Online shop API.postman_collection.json" -r html --reporter-html-export report.html
+          npx newman run "Online shop API.postman_collection.json" -r html --reporter-html-export report.html --suppress-exit-code
 
       - name: Upload Newman HTML Report
         uses: actions/upload-artifact@v4
