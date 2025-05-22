@@ -1,14 +1,20 @@
 # app.py
 from flask import Flask, render_template
+from prometheus_flask_exporter import PrometheusMetrics
 
-app = Flask(__name__, static_folder="static", template_folder=".")
+app = Flask(__name__)
+metrics = PrometheusMetrics(app)
 
-# Route for the home page (http://localhost:5000/)
+
+
 @app.route("/")
 def index():
-    # main.html must be in the same folder as app.py
     return render_template("main.html")
 
+
+print("Registered routes:")
+for rule in app.url_map.iter_rules():
+    print(rule)
+
 if __name__ == "__main__":
-    # debug=True enables auto‑reload on file changes
-    app.run(host="0.0.0.0", port=8081, debug=True)
+    app.run(host="0.0.0.0", port=8081)
