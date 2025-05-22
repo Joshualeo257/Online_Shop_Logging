@@ -20,9 +20,6 @@ jobs:
           npm install -g newman
           npm install -g newman-reporter-html
 
-      - name: Create Output Directory
-        run: mkdir -p newman
-
       - name: Run Newman Collection (no environment file)
         run: |
           npx newman run "Online shop API.postman_collection.json" -r html --reporter-html-export report.html
@@ -31,4 +28,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: newman-report
-          path: newman/report.html
+          path: report.html
