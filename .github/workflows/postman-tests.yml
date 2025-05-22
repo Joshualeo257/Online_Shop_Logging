@@ -1,0 +1,34 @@
+name: Run Postman Tests
+
+on: [push, pull_request]
+
+jobs:
+  newman:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Newman and HTML Reporter
+        run: |
+          npm install -g newman
+          npm install -g newman-reporter-html
+
+      - name: Create Output Directory
+        run: mkdir -p newman
+
+      - name: Run Newman Collection (no environment file)
+        run: |
+          npx newman run "Online shop API.postman_collection.json" -r html --reporter-html-export report.html
+
+      - name: Upload Newman HTML Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: newman-report
+          path: newman/report.html
