@@ -25,7 +25,6 @@ jobs:
           npx newman run "Online shop API.postman_collection.json" -r html --reporter-html-export report.html
 
       - name: Upload Newman HTML Report
-        uses: actions/download-artifact@v4
         uses: actions/upload-artifact@v4
 
         with:
