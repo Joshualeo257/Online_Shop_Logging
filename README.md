@@ -1,5 +1,8 @@
 # Online_Shop_Logging
 Welcome to the online shop!
+
+![Alt text]()
+
 🏠 Home & Kitchenware
 Cutlery set
 
