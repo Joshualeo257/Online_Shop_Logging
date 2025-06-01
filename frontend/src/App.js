@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import CategoryList from "./components/CategoryList";
 import ProductList from "./components/ProductList";
-import './App.css';
+import "./App.css";
 
 function App() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, setProducts] = useState([]);
-  const [season, setSeason] = useState("Spring");
+  const [season, setSeason] = useState(null); // will come from backend
   const [originalPrices, setOriginalPrices] = useState({});
   const [discountsBySeason, setDiscountsBySeason] = useState({});
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
 
+  // Load categories, original prices, discounts and current season on mount
   useEffect(() => {
     fetch("http://localhost:5000/api/categories")
       .then((res) => res.json())
@@ -28,10 +29,16 @@ function App() {
       .then((res) => res.json())
       .then(setDiscountsBySeason)
       .catch(console.error);
+
+    fetch("http://localhost:5000/api/currentSeason")
+      .then((res) => res.json())
+      .then((data) => setSeason(data.current_season))
+      .catch(console.error);
   }, []);
 
+  // Fetch products when selectedCategory or season changes
   useEffect(() => {
-    if (!selectedCategory) return;
+    if (!selectedCategory || !season) return;
 
     fetch(`http://localhost:5000/api/products?category=${selectedCategory}&season=${season}`)
       .then((res) => res.json())
@@ -57,9 +64,9 @@ function App() {
     fetch("http://localhost:5000/api/checkout", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(cart)
+      body: JSON.stringify(cart),
     })
       .then((res) => res.json())
       .then((response) => {
@@ -72,22 +79,17 @@ function App() {
 
   return (
     <div className="container">
-      <div style={{ maxWidth: 700, margin: "auto", padding: 20 }}>
+      <div style={{ maxWidth: 700, margin: "auto", padding: 20, position: "relative" }}>
         <h1>Online Shop - Seasonal Discounts</h1>
 
-        <label>
-          Select Season:{" "}
-          <select
-            value={season}
-            onChange={(e) => setSeason(e.target.value)}
-            style={{ marginBottom: 20 }}
-          >
-            <option>Spring</option>
-            <option>Summer</option>
-            <option>Fall</option>
-            <option>Winter</option>
-          </select>
-        </label>
+        {/* Show current season from backend */}
+        {season ? (
+          <p>
+            <strong>Current Season:</strong> {season}
+          </p>
+        ) : (
+          <p>Loading season info...</p>
+        )}
 
         <CategoryList
           categories={categories}
@@ -108,14 +110,14 @@ function App() {
             border: "1px solid #ddd",
             padding: "8px 12px",
             borderRadius: "5px",
-            cursor: "pointer"
+            cursor: "pointer",
           }}
         >
           🛒 Cart ({cart.length})
         </button>
 
         {showCart && (
-          <div className="cart-submenu">
+          <div className="cart-submenu" style={{ backgroundColor: "white" }}>
             <h3>Cart</h3>
             <ul>
               {cart.map((item, idx) => (
