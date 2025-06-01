@@ -18,8 +18,9 @@ pip install --upgrade pip
 pip install flask flask-cors
 pip install pymongo
 
-# Run Flask app in background (optional, or run in separate terminal)
-Start-Process python -ArgumentList "app.py"
+# Start Node.js backend (Express server)
+Write-Host "Starting Express server..."
+Start-Process node -ArgumentList "server.js"
 
 # Change to frontend folder
 Set-Location -Path ".\frontend"
