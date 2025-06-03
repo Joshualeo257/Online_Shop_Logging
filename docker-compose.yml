@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # === FRONTEND ===
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - shopnet
+
+  # === BACKEND ===
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend  # ← place backend Dockerfile in root and name it differently
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./images:/app/images
+      - ./discounts.json:/app/discounts.json
+    depends_on:
+      - mongo
+    networks:
+      - shopnet
+
+  # === MONGO DB ===
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    networks:
+      - shopnet
+
+  # === PROMETHEUS ===
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - shopnet
+
+  # === GRAFANA ===
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - shopnet
+
+volumes:
+  mongodata:
+
+networks:
+  shopnet:

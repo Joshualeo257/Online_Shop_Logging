@@ -66,7 +66,7 @@ function App() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(cart),
+      body: JSON.stringify({ items: cart }),
     })
       .then((res) => res.json())
       .then((response) => {
