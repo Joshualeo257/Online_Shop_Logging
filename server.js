@@ -2,9 +2,38 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { MongoClient } = require('mongodb');
 
 const app = express();
+app.use(express.json());
 const PORT = 5000;
+
+const promClient = require('prom-client');
+
+const collectDefaultMetrics = promClient.collectDefaultMetrics;
+collectDefaultMetrics();
+
+const register = new promClient.Registry();
+
+//HTTP request counter metric
+const httpRequestCounter = new promClient.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status_code'],
+});
+
+register.registerMetric(httpRequestCounter);
+
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    httpRequestCounter.inc({
+      method: req.method,
+      route: req.route ? req.route.path : req.path,
+      status_code: res.statusCode,
+    });
+  });
+  next();
+});
 
 app.use(cors());
 
@@ -37,10 +66,45 @@ const productsByCategory = {
   "Fitness": ["Treadmill", "Desk"]
 };
 
+
+// MongoDB config
+const MONGO_URL = 'mongodb://127.0.0.1:27017';
+const DB_NAME = 'onlineShop';
+const COLLECTION_NAME = 'purchases';
+
+const uri = "mongodb://127.0.0.1:27017/";
+const client = new MongoClient(uri);
+
+let checkoutCollection;
+
+async function connectDB() {
+  try {
+    await client.connect();
+    const db = client.db("online_shop");
+    checkoutCollection = db.collection("checkout");
+    console.log("✅ Connected to MongoDB!");
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error);
+  }
+}
+
+// Call this once on server startup
+connectDB();
+
+
 // Routes
 
 app.get('/', (req, res) => {
   res.send('Express API server is running.');
+});
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', promClient.register.contentType);
+  res.end(await promClient.register.metrics());
+});
+
+app.get('/api/discounts', (req, res) => {
+  res.json(discountsData);
 });
 
 app.get('/api/currentSeason', (req, res) => {
@@ -81,6 +145,26 @@ app.get('/api/products', (req, res) => {
   });
 
   res.json(products);
+});
+
+app.post('/api/checkout', async (req, res) => {
+  try {
+    const items = req.body.items;  
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ error: "Invalid data format, expected array" });
+    }
+
+    const checkoutRecord = {
+      timestamp: new Date(),
+      items: items
+    };
+
+    const result = await checkoutCollection.insertOne(checkoutRecord);;
+    res.json({ message: "Checkout successful", insertedIds: result.insertedIds });
+  } catch (error) {
+    console.error("❌ Error saving to MongoDB:", error);
+    res.status(500).json({ error: "Failed to save purchase" });
+  }
 });
 
 // Serve images statically
