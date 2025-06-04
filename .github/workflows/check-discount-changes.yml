@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           persist-credentials: true  # needed for pushing commits
 
@@ -74,7 +74,7 @@ jobs:
           echo "No changes to discounts.json detected." > output.txt
 
       - name: Upload output artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: discount-season-message
           path: output.txt
