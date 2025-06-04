@@ -62,10 +62,10 @@ const discountsPath = path.join(BASE_DIR, 'discounts.json');
 const imagesDir = path.join(BASE_DIR, 'images');
 
 let discountsData = {};
-const currentSeason = "Winter";
 
 function loadData() {
   discountsData = JSON.parse(fs.readFileSync(discountsPath));
+  currentSeason = discountsData.current_season || "Winter";
 }
 loadData();
 setInterval(loadData, 10 * 60 * 1000);
