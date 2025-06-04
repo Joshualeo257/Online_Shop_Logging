@@ -114,6 +114,16 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
+app.get('/api/season-message', (req, res) => {
+  const filePath = path.join(__dirname, 'output.txt');
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) return res.status(500).json({ message: "Error reading message file" });
+
+    const lines = data.trim().split('\n');
+    const message = lines.slice(-2).join('\n'); // Get last 2 lines
+    res.json({ message });
+  });
+});
 // Modified GET /api/products:
 // - if query.category exists, filter by category (old behavior)
 // - else return all products (for admin)

@@ -5,6 +5,7 @@ import ManageProducts from "./ManageProducts";
 import CategoryList from "./components/CategoryList";
 import ProductList from "./components/ProductList";
 import "./App.css";
+import Toast from "./Toast";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,6 +20,8 @@ function App() {
   const [discountsBySeason, setDiscountsBySeason] = useState({});
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [showToast, setShowToast] = useState(true); 
 
   const handleLoginSuccess = (role) => {
     setIsLoggedIn(true);
@@ -43,6 +46,12 @@ function App() {
     fetch("http://localhost:5000/api/currentSeason")
       .then((res) => res.json())
       .then((data) => setSeason(data.current_season))
+      .catch(console.error);
+
+    // NEW: Fetch toast message from backend
+    fetch("http://localhost:5000/api/season-message")
+      .then((res) => res.json())
+      .then((data) => setToastMessage(data.message))
       .catch(console.error);
   }, [isLoggedIn, userRole]);
 
@@ -132,6 +141,10 @@ function App() {
       >
         Logout
       </button>
+
+      {toastMessage && showToast && (
+    <Toast message={toastMessage} onClose={() => setShowToast(false)} />
+  )}
 
       <div style={{ maxWidth: 700, margin: "auto", padding: 20, position: "relative" }}>
         <h1>Online Shop - Seasonal Discounts</h1>
