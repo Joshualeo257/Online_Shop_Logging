@@ -10,9 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout code with full history
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0           # fetch full history so HEAD~1 exists
           persist-credentials: true  # needed for pushing commits
 
       - name: Check if discounts.json changed in last commit
