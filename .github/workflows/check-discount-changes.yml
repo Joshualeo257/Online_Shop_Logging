@@ -1,84 +1,67 @@
-name: Check Discount Changes and Season Message
+name: Change Discounts Monitor (Manual Loop)
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
-  
+
 jobs:
-  check-discount:
+  loop-check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # ⏱️ Safety timeout so it doesn't run forever
 
     steps:
-      - name: Checkout code with full history
+      - name: Checkout with full history
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0           # fetch full history so HEAD~1 exists
-          persist-credentials: true  # needed for pushing commits
+          fetch-depth: 0
+          persist-credentials: true
 
-      - name: Check if discounts.json changed in last commit
-        id: check_diff
+      - name: Install loop utility
+        run: sudo apt-get install -y moreutils
+
+      - name: Start 30s loop for checking discount changes
         run: |
-          git diff --name-only HEAD~1 HEAD > changed_files.txt
-          if grep -q "discounts.json" changed_files.txt; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-          fi
+          for i in {1..20}; do  # 🧪 change to control how many times it runs (e.g. 20 * 30s = 10 minutes)
+            echo "🕒 Cycle $i - Checking for discounts.json change..."
+            
+            git pull origin main
 
-      - name: Read current_season and print messages
-        if: steps.check_diff.outputs.changed == 'true'
-        id: season_message
-        run: |
-          SEASON=$(grep '"current_season"' discounts.json | sed -E 's/.*: *"([^"]+)".*/\1/')
-          echo "Current Season detected: $SEASON"
+            CHANGED=$(git diff --name-only HEAD~1 HEAD | grep "discounts.json" || true)
 
-          if [[ "$SEASON" == "Summer" ]]; then
-            MSG="☀️ Summer Sale is here! Enjoy sizzling deals!"
-          elif [[ "$SEASON" == "Winter" ]]; then
-            MSG="❄️ Winter Sale is live! Warm up with hot offers!"
-          elif [[ "$SEASON" == "Spring" ]]; then
-            MSG="🌸 Spring Sale! Fresh deals are blooming!"
-          elif [[ "$SEASON" == "Autumn" ]]; then
-            MSG="🍂 Autumn Sale is active! Fall into big savings!"
-          else
-            MSG="Season changed to: $SEASON. No predefined message found."
-          fi
+            if [ ! -z "$CHANGED" ]; then
+              echo "✅ discounts.json changed."
 
-          echo "$MSG"
-          echo "🛒 Discount prices may have been updated. Check out the new prices!"
+              SEASON=$(grep '"current_season"' discounts.json | sed -E 's/.*: *"([^"]+)".*/\1/')
+              echo "Current Season detected: $SEASON"
 
-          # Save output to file
-          echo "Current Season detected: $SEASON" > output.txt
-          echo "$MSG" >> output.txt
-          echo "🛒 Discount prices may have been updated. Check out the new prices!" >> output.txt
+              case "$SEASON" in
+                "Summer") MSG="☀️ Summer Sale is here! Enjoy sizzling deals!" ;;
+                "Winter") MSG="❄️ Winter Sale is live! Warm up with hot offers!" ;;
+                "Spring") MSG="🌸 Spring Sale! Fresh deals are blooming!" ;;
+                "Autumn") MSG="🍂 Autumn Sale is active! Fall into big savings!" ;;
+                *) MSG="Season changed to: $SEASON. No predefined message found." ;;
+              esac
 
-      - name: Commit and push output.txt back to repo
-        if: steps.check_diff.outputs.changed == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+              echo "🛒 Discount prices may have been updated. Check out the new prices!"
 
-          git add output.txt
-          # Commit only if file changed
-          if ! git diff --cached --quiet; then
-            git commit -m "Add discount season message output.txt [skip ci]"
-            git push origin main
-          else
-            echo "No changes to commit."
-          fi
+              echo "Current Season detected: $SEASON" > output.txt
+              echo "$MSG" >> output.txt
+              echo "🛒 Discount prices may have been updated. Check out the new prices!" >> output.txt
 
-      - name: Handle no changes case
-        if: steps.check_diff.outputs.changed == 'false'
-        run: |
-          echo "No changes to discounts.json detected."
-          echo "No changes to discounts.json detected." > output.txt
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Upload output artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: discount-season-message
-          path: output.txt
+              git add output.txt
+              if ! git diff --cached --quiet; then
+                git commit -m "Looped update of output.txt [skip ci]"
+                git push origin main
+              fi
+            else
+              echo "❌ No discounts.json change in this cycle."
+            fi
+
+            echo "⏳ Sleeping for 30 seconds..."
+            sleep 30
+          done
