@@ -1,0 +1,80 @@
+name: Check Discount Changes and Season Message
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  check-discount:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true  # needed for pushing commits
+
+      - name: Check if discounts.json changed in last commit
+        id: check_diff
+        run: |
+          git diff --name-only HEAD~1 HEAD > changed_files.txt
+          if grep -q "discounts.json" changed_files.txt; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Read current_season and print messages
+        if: steps.check_diff.outputs.changed == 'true'
+        id: season_message
+        run: |
+          SEASON=$(grep '"current_season"' discounts.json | sed -E 's/.*: *"([^"]+)".*/\1/')
+          echo "Current Season detected: $SEASON"
+
+          if [[ "$SEASON" == "Summer" ]]; then
+            MSG="☀️ Summer Sale is here! Enjoy sizzling deals!"
+          elif [[ "$SEASON" == "Winter" ]]; then
+            MSG="❄️ Winter Sale is live! Warm up with hot offers!"
+          elif [[ "$SEASON" == "Spring" ]]; then
+            MSG="🌸 Spring Sale! Fresh deals are blooming!"
+          elif [[ "$SEASON" == "Autumn" ]]; then
+            MSG="🍂 Autumn Sale is active! Fall into big savings!"
+          else
+            MSG="Season changed to: $SEASON. No predefined message found."
+          fi
+
+          echo "$MSG"
+          echo "🛒 Discount prices may have been updated. Check out the new prices!"
+
+          # Save output to file
+          echo "Current Season detected: $SEASON" > output.txt
+          echo "$MSG" >> output.txt
+          echo "🛒 Discount prices may have been updated. Check out the new prices!" >> output.txt
+
+      - name: Commit and push output.txt back to repo
+        if: steps.check_diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add output.txt
+          # Commit only if file changed
+          if ! git diff --cached --quiet; then
+            git commit -m "Add discount season message output.txt [skip ci]"
+            git push origin main
+          else
+            echo "No changes to commit."
+          fi
+
+      - name: Handle no changes case
+        if: steps.check_diff.outputs.changed == 'false'
+        run: |
+          echo "No changes to discounts.json detected."
+          echo "No changes to discounts.json detected." > output.txt
+
+      - name: Upload output artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: discount-season-message
+          path: output.txt

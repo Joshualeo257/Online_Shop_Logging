@@ -1,28 +1,38 @@
 import React, { useState, useEffect } from "react";
+import Login from "./login";
+import AdminPage from "./AdminPage";
+import ManageProducts from "./ManageProducts";
 import CategoryList from "./components/CategoryList";
 import ProductList from "./components/ProductList";
 import "./App.css";
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+  const [username, setUsername] = useState(localStorage.getItem("username") || "");
+  const [currentPage, setCurrentPage] = useState("home"); // 'home', 'admin', 'manageProducts'
+
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, setProducts] = useState([]);
-  const [season, setSeason] = useState(null); // will come from backend
-  const [originalPrices, setOriginalPrices] = useState({});
+  const [season, setSeason] = useState(null);
   const [discountsBySeason, setDiscountsBySeason] = useState({});
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
 
-  // Load categories, original prices, discounts and current season on mount
+  const handleLoginSuccess = (role) => {
+    setIsLoggedIn(true);
+    setUserRole(role);
+    if (role === "admin") setCurrentPage("admin");
+    else setCurrentPage("home");
+  };
+
   useEffect(() => {
+    if (!isLoggedIn || userRole !== "user") return;
+
     fetch("http://localhost:5000/api/categories")
       .then((res) => res.json())
       .then(setCategories)
-      .catch(console.error);
-
-    fetch("http://localhost:5000/api/originalPrices")
-      .then((res) => res.json())
-      .then(setOriginalPrices)
       .catch(console.error);
 
     fetch("http://localhost:5000/api/discounts")
@@ -34,27 +44,17 @@ function App() {
       .then((res) => res.json())
       .then((data) => setSeason(data.current_season))
       .catch(console.error);
-  }, []);
+  }, [isLoggedIn, userRole]);
 
-  // Fetch products when selectedCategory or season changes
   useEffect(() => {
+    if (!isLoggedIn || userRole !== "user") return;
     if (!selectedCategory || !season) return;
 
     fetch(`http://localhost:5000/api/products?category=${selectedCategory}&season=${season}`)
       .then((res) => res.json())
-      .then((fetchedProducts) => {
-        const seasonalDiscounts = discountsBySeason[season] || {};
-
-        const merged = fetchedProducts.map((p) => {
-          const original_price = originalPrices[p.name] ?? null;
-          const discounted_price = seasonalDiscounts[p.name] ?? null;
-          return { ...p, original_price, discounted_price };
-        });
-
-        setProducts(merged);
-      })
+      .then(setProducts)
       .catch(console.error);
-  }, [selectedCategory, season, originalPrices, discountsBySeason]);
+  }, [selectedCategory, season, isLoggedIn, userRole]);
 
   const addToCart = (product) => {
     setCart([...cart, product]);
@@ -66,7 +66,10 @@ function App() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ items: cart }),
+      body: JSON.stringify({
+        username,
+        items: cart,
+      }),
     })
       .then((res) => res.json())
       .then((response) => {
@@ -77,12 +80,62 @@ function App() {
       .catch(console.error);
   };
 
+  if (!isLoggedIn) {
+    return <Login onLoginSuccess={handleLoginSuccess} setUsername={setUsername} />;
+  }
+
+  if (userRole === "admin") {
+    if (currentPage === "admin")
+      return <AdminPage onNavigate={setCurrentPage} />;
+    else if (currentPage === "manageProducts")
+      return (
+        <>
+          <button
+            onClick={() => setCurrentPage("admin")}
+            style={{
+              position: "fixed",
+              top: 20,
+              left: 20,
+              padding: "8px 12px",
+              cursor: "pointer",
+            }}
+          >
+            &larr; Back to Admin
+          </button>
+          <ManageProducts />
+        </>
+      );
+  }
+
+  // User UI
   return (
     <div className="container">
+      <button
+        onClick={() => {
+          localStorage.removeItem("username");
+          setIsLoggedIn(false);
+          setUserRole(null);
+          setUsername("");
+          setCurrentPage("home");
+        }}
+        style={{
+          position: "absolute",
+          top: 20,
+          left: 20,
+          zIndex: 1001,
+          backgroundColor: "white",
+          border: "1px solid #ddd",
+          padding: "8px 12px",
+          borderRadius: "5px",
+          cursor: "pointer",
+        }}
+      >
+        Logout
+      </button>
+
       <div style={{ maxWidth: 700, margin: "auto", padding: 20, position: "relative" }}>
         <h1>Online Shop - Seasonal Discounts</h1>
 
-        {/* Show current season from backend */}
         {season ? (
           <p>
             <strong>Current Season:</strong> {season}
