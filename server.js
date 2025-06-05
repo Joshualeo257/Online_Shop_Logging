@@ -211,35 +211,48 @@ app.post("/api/products/add", upload.single("image"), async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    const parsedOriginal = parseFloat(original_price);
+
     const product = {
       name,
       category,
-      original_price: parseFloat(original_price),
-      discounts: {
-        winter: parseFloat(winter) || 0,
-        summer: parseFloat(summer) || 0,
-        spring: parseFloat(spring) || 0,
-        fall: parseFloat(fall) || 0,
-      },
+      original_price: parsedOriginal,
       image_url: `http://localhost:${PORT}/images/${req.file.filename}`,
-      image: req.file.filename.replace(".jpg", "") // for compatibility with display logic
+      image: req.file.filename.replace(".jpg", "")
     };
 
     // Insert into MongoDB
     const result = await productsCollection.insertOne(product);
 
-    // Update discounts.json
+    // Load and update discounts.json correctly
     const discountsPath = path.join(__dirname, "discounts.json");
     let discountsJson = {};
     if (fs.existsSync(discountsPath)) {
       discountsJson = JSON.parse(fs.readFileSync(discountsPath, "utf-8"));
     }
-    discountsJson[name] = {
-      winter: product.discounts.winter,
-      summer: product.discounts.summer,
-      spring: product.discounts.spring,
-      fall: product.discounts.fall,
-    };
+
+    // Ensure all 4 seasons exist in the JSON
+    const seasons = ["Winter", "Summer", "Spring", "Fall"];
+    for (const season of seasons) {
+      if (!discountsJson[season]) {
+        discountsJson[season] = {};
+      }
+    }
+
+    // Add to each season only if a discount is provided and greater than 0
+    if (parseFloat(winter) > 0) {
+      discountsJson["Winter"][name] = parseFloat(winter);
+    }
+    if (parseFloat(summer) > 0) {
+      discountsJson["Summer"][name] = parseFloat(summer);
+    }
+    if (parseFloat(spring) > 0) {
+      discountsJson["Spring"][name] = parseFloat(spring);
+    }
+    if (parseFloat(fall) > 0) {
+      discountsJson["Fall"][name] = parseFloat(fall);
+    }
+
     fs.writeFileSync(discountsPath, JSON.stringify(discountsJson, null, 2));
 
     res.json({ _id: result.insertedId, ...product });
@@ -248,6 +261,7 @@ app.post("/api/products/add", upload.single("image"), async (req, res) => {
     res.status(500).json({ message: "Failed to add product" });
   }
 });
+
 
 app.post('/api/checkout', async (req, res) => {
   try {
@@ -334,7 +348,12 @@ app.delete("/api/products/name/:name", async (req, res) => {
     const discountsPath = path.join(__dirname, "discounts.json");
     if (fs.existsSync(discountsPath)) {
       const discountsJson = JSON.parse(fs.readFileSync(discountsPath, "utf-8"));
-      delete discountsJson[name];
+      for (const season of ["Spring", "Summer", "Fall", "Winter"]) {
+    if (discountsJson[season] && discountsJson[season][name]) {
+      delete discountsJson[season][name];
+    }
+  }
+
       fs.writeFileSync(discountsPath, JSON.stringify(discountsJson, null, 2));
     }
 

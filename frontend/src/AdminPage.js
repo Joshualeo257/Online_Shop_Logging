@@ -4,19 +4,27 @@ function AdminPage({ onNavigate }) {
   const [discounts, setDiscounts] = useState({});
   const [products, setProducts] = useState([]);
   const [originalPrices, setOriginalPrices] = useState({});
+  const [currentSeason, setCurrentSeason] = useState("Spring");
+
+  // Compute seasons excluding "current_season"
+  const seasons = Object.keys(discounts).filter((key) => key !== "current_season");
 
   // Load discounts and products on mount
   useEffect(() => {
     fetch("http://localhost:5000/api/discounts")
-      .then((res) => res.json())
-      .then(setDiscounts)
-      .catch(console.error);
+    .then((res) => res.json())
+    .then((data) => {
+      setDiscounts(data);
+      if (data.current_season) {
+        setCurrentSeason(data.current_season);
+      }
+    })
+    .catch(console.error);
 
     fetch("http://localhost:5000/api/products")
       .then((res) => res.json())
       .then((data) => {
         setProducts(data);
-        // Store original prices for editing
         const prices = {};
         data.forEach((p) => {
           prices[p.name] = p.original_price;
@@ -43,8 +51,6 @@ function AdminPage({ onNavigate }) {
   };
 
   const handleConfirmChanges = () => {
-    // Construct discounts object with original prices included
-    // (Assuming backend only needs discounts, original prices saved elsewhere)
     fetch("http://localhost:5000/api/discounts/update-all", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -70,16 +76,16 @@ function AdminPage({ onNavigate }) {
       </button>
 
       <table border="1" cellPadding="8" cellSpacing="0" style={{
-      width: "100%",
-      borderCollapse: "collapse",
-      backgroundColor: "white", // white background
-      border: "1px solid #ddd",
-    }}>
+        width: "100%",
+        borderCollapse: "collapse",
+        backgroundColor: "white",
+        border: "1px solid #ddd",
+      }}>
         <thead>
           <tr>
             <th>Product</th>
             <th>Original Price ($)</th>
-            {Object.keys(discounts).map((season) => (
+            {seasons.map((season) => (
               <th key={season}>{season} Discount ($)</th>
             ))}
           </tr>
@@ -96,7 +102,7 @@ function AdminPage({ onNavigate }) {
                   style={{ width: 80 }}
                 />
               </td>
-              {Object.keys(discounts).map((season) => (
+              {seasons.map((season) => (
                 <td key={season}>
                   <input
                     type="number"
@@ -110,6 +116,46 @@ function AdminPage({ onNavigate }) {
           ))}
         </tbody>
       </table>
+      <div style={{ marginTop: 20 }}>
+  <label>
+    Current Season:{" "}
+    <select
+      value={currentSeason}
+      onChange={(e) => setCurrentSeason(e.target.value)}
+    >
+      {["Spring", "Summer", "Fall", "Winter"].map((s) => (
+        <option key={s} value={s}>{s}</option>
+      ))}
+    </select>
+  </label>
+  <button
+    onClick={() => {
+      const updated = { ...discounts, current_season: currentSeason };
+      fetch("http://localhost:5000/api/discounts/update-all", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discounts: updated }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to update season");
+          return res.json();
+        })
+        .then((data) => alert(data.message))
+        .catch((err) => alert("Error: " + err.message));
+    }}
+    style={{
+      marginLeft: 10,
+      padding: "5px 10px",
+      backgroundColor: "#007BFF",
+      color: "white",
+      border: "none",
+      borderRadius: 4,
+      cursor: "pointer",
+    }}
+  >
+    Update Season
+  </button>
+</div>
 
       <button
         onClick={handleConfirmChanges}

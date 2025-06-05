@@ -92,8 +92,7 @@ export default function ManageProducts() {
 
   return (
     <div>
-      <h2>Manage Products</h2>
-
+      <h2>.</h2>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
         {products.map(({ _id, name, original_price, image_url }) => (
           <div
@@ -180,6 +179,7 @@ export default function ManageProducts() {
           <input
             type="number"
             name="winter"
+            step="0.01"
             value={form.winter}
             onChange={handleChange}
             min="0"
@@ -193,6 +193,7 @@ export default function ManageProducts() {
           <input
             type="number"
             name="summer"
+            step="0.01"
             value={form.summer}
             onChange={handleChange}
             min="0"
@@ -206,6 +207,7 @@ export default function ManageProducts() {
           <input
             type="number"
             name="spring"
+            step="0.01"
             value={form.spring}
             onChange={handleChange}
             min="0"
@@ -219,6 +221,7 @@ export default function ManageProducts() {
           <input
             type="number"
             name="fall"
+            step="0.01"
             value={form.fall}
             onChange={handleChange}
             min="0"
