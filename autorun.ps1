@@ -17,6 +17,7 @@ Write-Host "Installing Python dependencies..."
 pip install --upgrade pip
 pip install flask flask-cors
 pip install pymongo
+pip install requests
 
 # Start Node.js backend (Express server)
 Write-Host "Starting Express server..."
@@ -32,3 +33,5 @@ npm install
 # Start React app
 Write-Host "Starting React app..."
 npm start
+
+
