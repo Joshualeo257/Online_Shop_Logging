@@ -9,7 +9,7 @@ permissions:
 jobs:
   loop-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # ⏱️ Safety timeout so it doesn't run forever
+    timeout-minutes: 30  # ⏱️ Safety timeout so it doesn't run forever
 
     steps:
       - name: Checkout with full history
@@ -23,7 +23,7 @@ jobs:
 
       - name: Start 30s loop for checking discount changes
         run: |
-          for i in {1..20}; do  # 🧪 change to control how many times it runs (e.g. 20 * 30s = 10 minutes)
+          for i in {1..40}; do  # 🧪 change to control how many times it runs (e.g. 20 * 30s = 10 minutes)
             echo "🕒 Cycle $i - Checking for discounts.json change..."
             
             git pull origin main
