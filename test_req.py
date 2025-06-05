@@ -4,9 +4,9 @@ import random
 
 # Target your local Express backend
 valid_url = "http://localhost:5000/api/products?category=Electronics"
-invalid_url = "http://localhost:5000/api/products"  # Missing ?category
+invalid_url = "http://localhost:5000/api/invalid"  # Missing ?category
 num_requests = 1000
-failure_ratio = 0.2  # 20% of requests will be intentionally incorrect
+failure_ratio = 0.6  # 20% of requests will be intentionally incorrect
 
 def send_request():
     try:
