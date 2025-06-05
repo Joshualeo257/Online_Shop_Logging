@@ -1,4 +1,4 @@
-name: Change Discounts Monitor (Manual Loop)
+name: Change Discounts Monitor 
 
 on:
   workflow_dispatch:
