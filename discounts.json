@@ -1,5 +1,5 @@
 {
-  "current_season": "Spring",
+  "current_season": "Summer",
   "Spring": {
     "Airpods": 105.99,
     "Blender": 49.99,
@@ -11,7 +11,6 @@
     "Smartwatch": 209.99,
     "Desk": 159.99,
     "TV": 469.99,
-    "Speaker": 94.99,
     "Laptop": 949.99
   },
   "Fall": {
